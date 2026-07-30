@@ -1,5 +1,5 @@
 # Task Registry
-*Last Updated: 2026-07-30 18:25:00 IST*
+*Last Updated: 2026-07-30 19:20:00 IST*
 
 ## Active Tasks
 | ID | Title | Status | Priority | Started | Dependencies |
@@ -9,8 +9,14 @@
 ## Completed Tasks
 | ID | Title | Completed |
 |----|-------|-----------|
-| T1 | Per-note visibility with YAML frontmatter | 2026-07-29 |
+| T1 | Per-note visibility with YAML frontmatter | 2026-07-30 |
 | T2 | Add LaTeX Math Support | 2026-07-30 |
+
+## Implementation Details
+| Feature | Document |
+|---------|----------|
+| Per-note visibility | `implementation-details/per-note-visibility.md` |
+| LaTeX math rendering | `implementation-details/latex-math-rendering.md` |
 
 ## Task Template
 When creating new tasks, use this format:

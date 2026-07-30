@@ -1,37 +1,32 @@
 # Session Cache
-*Created: 2026-07-30 16:53:12 UTC*
-*Last Updated: 2026-07-30 16:55:00 UTC*
+
+*Last Updated: 2026-07-30 19:18 UTC*
 
 ## Current Session
-**Started**: 2026-07-30 13:33 UTC
-**Focus Task**: T1
-**Status**: ✅ Session complete
+- **Session ID**: 6b89fb2b-8dad-4371-b493-9d25d61bb6c4
+- **Model**: kimi/k3
+- **Started**: 2026-07-30 18:14 UTC
 
-## Active Tasks
-| ID | Title | Status | Progress |
-|----|-------|--------|----------|
-| T1 | Per-note visibility with YAML frontmatter | 🔄 IN PROGRESS | Backend complete, frontend complete, deployed |
+## Context Summary
+Working on flatnotes fork (github.com/space-cadet/flatnotes, branch: feature/per-note-visibility).
 
-## Session History
+### Completed in this session:
+1. **T1: Per-note visibility** — COMPLETED (actually done in prior session, now marked as completed)
+2. **T2: LaTeX Math Support** — COMPLETED and deployed
+   - Fixed Toast UI parser bug that mangled backslashes in `$$...$$` blocks
+   - Final solution: extract math blocks before Toast UI, use HTML placeholders, render with KaTeX after
+   - Verified: inline math, block math, integrals, Greek letters, pmatrix matrices
 
-### 2026-07-30 13:33 - 16:46 UTC
-**Focus**: T1 — Per-note visibility feature implementation
-**Status**: Core feature complete, deployed
-**Summary**:
-- Investigated flatnotes auth architecture
-- Created fork: github.com/space-cadet/flatnotes
-- Implemented YAML frontmatter parsing (python-frontmatter)
-- Added Visibility enum (public/private)
-- Conditional auth: public notes readable without auth
-- Search filtering by visibility
-- Visibility toggle in note editor
-- Public-first homepage (removed forced login)
-- Deployed to quantumofgravity.com/notes/
-- Test notes created and verified
+## Active Files
+- `/home/cloudy/.openclaw/workspace/code/flatnotes/` — main working directory
 
-## Next Session Context
-- Remaining issues to address:
-  1. UI polish: visibility toggle styling
-  2. Better "login required" messaging for private notes
-  3. Full frontend rebuild and browser testing
-  4. PR submission to upstream dullage/flatnotes
+## Pending Tasks
+- T1 remaining: UI polish, PR to upstream dullage/flatnotes
+
+## Key Decisions
+- KaTeX math: Placeholder extraction approach (not auto-render or double-escaping)
+- Visibility: YAML frontmatter with safe-by-default (private)
+
+## Test URLs
+- `https://quantumofgravity.com/notes/note/latex-test` — LaTeX math test
+- `https://quantumofgravity.com/notes/` — Public notes homepage
