@@ -27,6 +27,12 @@ api.interceptors.request.use(
 
 export function apiErrorHandler(error, toast) {
   if (error.response?.status === 401) {
+    // Don't auto-redirect if we're viewing a note or on public pages
+    // The component should handle showing login UI
+    const currentRoute = router.currentRoute.value.name;
+    if (currentRoute === "note" || currentRoute === "home" || currentRoute === "search") {
+      return;
+    }
     const redirectPath = router.currentRoute.value.fullPath;
     router.push({
       name: "login",

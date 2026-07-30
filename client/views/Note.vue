@@ -195,6 +195,11 @@ function init() {
       .catch((error) => {
         if (error.response?.status === 404) {
           loadingIndicator.value.setFailed("Note not found", mdiNoteOffOutline);
+        } else if (error.response?.status === 401) {
+          loadingIndicator.value.setFailed(
+            "This note is private. Please log in to view it.",
+            mdiNoteOffOutline,
+          );
         } else {
           loadingIndicator.value.setFailed();
           apiErrorHandler(error, toast);

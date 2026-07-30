@@ -1,8 +1,17 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 export const useGlobalStore = defineStore("global", () => {
   const config = ref({});
+  const isAuthenticated = ref(false);
 
-  return { config };
+  const authRequired = computed(() => {
+    return config.value.authType && config.value.authType !== "none" && config.value.authType !== "read_only";
+  });
+
+  function setAuthenticated(value) {
+    isAuthenticated.value = value;
+  }
+
+  return { config, isAuthenticated, authRequired, setAuthenticated };
 });

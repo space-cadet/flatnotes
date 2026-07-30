@@ -22,6 +22,7 @@
 
 <script setup>
 import {
+  mdilLogin,
   mdilLogout,
   mdilMagnify,
   mdilMenu,
@@ -29,7 +30,7 @@ import {
   mdilNoteMultiple,
   mdilPlusCircle,
 } from "@mdi/light-js";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
 import CustomButton from "../components/CustomButton.vue";
@@ -38,7 +39,7 @@ import PrimeMenu from "../components/PrimeMenu.vue";
 import { authTypes, params, searchSortOptions } from "../constants.js";
 import { useGlobalStore } from "../globalStore.js";
 import { toggleTheme } from "../helpers.js";
-import { clearStoredToken } from "../tokenStorage.js";
+import { clearStoredToken, getStoredToken } from "../tokenStorage.js";
 
 const globalStore = useGlobalStore();
 const menu = ref();
@@ -50,7 +51,7 @@ defineProps({
 
 const emit = defineEmits(["toggleSearchModal"]);
 
-const menuItems = [
+const menuItems = computed(() => [
   {
     label: "Search",
     icon: mdilMagnify,
@@ -76,31 +77,46 @@ const menuItems = [
   },
   {
     separator: true,
-    visible: showLogOutButton,
+    visible: globalStore.authRequired,
   },
-  {
-    label: "Log Out",
-    icon: mdilLogout,
-    command: logOut,
-    visible: showLogOutButton,
-  },
-];
+  globalStore.isAuthenticated
+    ? {
+        label: "Log Out",
+        icon: mdilLogout,
+        command: logOut,
+        visible: globalStore.authRequired,
+      }
+    : {
+        label: "Log In",
+        icon: mdilLogin,
+        command: logIn,
+        visible: globalStore.authRequired,
+      },
+]);
 
 const showNewButton = computed(() => {
+  // Only show New Note button if auth is not required or user is authenticated
+  if (globalStore.authRequired && !globalStore.isAuthenticated) {
+    return false;
+  }
   return globalStore.config.authType !== authTypes.readOnly;
 });
+
+function logIn() {
+  router.push({
+    name: "login",
+    query: { [params.redirect]: router.currentRoute.value.fullPath },
+  });
+}
 
 function logOut() {
   clearStoredToken();
   localStorage.clear();
-  router.push({ name: "login" });
+  globalStore.setAuthenticated(false);
+  router.push({ name: "home" });
 }
 
 function toggleMenu(event) {
   menu.value.toggle(event);
-}
-
-function showLogOutButton() {
-  return ![authTypes.none, authTypes.readOnly].includes(globalStore.config.authType);
 }
 </script>

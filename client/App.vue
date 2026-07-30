@@ -23,7 +23,7 @@ import { useToast } from "primevue/usetoast";
 import { computed, ref } from "vue";
 import { RouterView, useRoute } from "vue-router";
 
-import { apiErrorHandler, getConfig } from "./api.js";
+import { apiErrorHandler, authCheck, getConfig } from "./api.js";
 import PrimeToast from "./components/PrimeToast.vue";
 import { useGlobalStore } from "./globalStore.js";
 import { loadTheme } from "./helpers.js";
@@ -66,7 +66,17 @@ Mousetrap.bindGlobal("ctrl+alt+h", () => {
 getConfig()
   .then((data) => {
     globalStore.config = data;
-    loadingIndicator.value.setLoaded();
+    // Check if user is already authenticated
+    authCheck()
+      .then(() => {
+        globalStore.setAuthenticated(true);
+      })
+      .catch(() => {
+        globalStore.setAuthenticated(false);
+      })
+      .finally(() => {
+        loadingIndicator.value.setLoaded();
+      });
   })
   .catch((error) => {
     apiErrorHandler(error, toast);
