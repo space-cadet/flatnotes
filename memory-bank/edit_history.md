@@ -1,7 +1,7 @@
 # Edit History
 
 *Created: 2026-07-30 16:53:12 UTC*
-*Last Updated: 2026-07-30 18:25:00 IST*
+*Last Updated: 2026-07-30 18:38:00 IST*
 
 ---
 
@@ -26,20 +26,22 @@
 - server/main.py: Conditional auth per note
 - Pipfile: Added python-frontmatter dependency
 
-### 18:08 - 18:24 IST - T2: Add LaTeX Math Support
+### 18:08 - 18:37 IST - T2: Add LaTeX Math Support
 - Added KaTeX v0.16.23 dependency
 - Modified 3 files for client-side math rendering
 - Built and deployed to quantumofgravity.com/notes/
 - Server restarted successfully
+- **Fixed backslash escaping bug**: Toast UI's markdown parser strips backslashes from LaTeX commands (e.g., `\int` → `int`)
 
 #### Files Changed
 - `package.json`: Added `katex` dependency
-- `client/components/toastui/ToastViewer.vue`: Added KaTeX auto-render hook (import CSS, call renderMathInElement after mount, watcher on initialValue)
+- `client/components/toastui/ToastViewer.vue`: Added KaTeX auto-render hook (import CSS, call renderMathInElement after mount, watcher on initialValue); Added `preprocessMath()` helper to double-escape backslashes inside math blocks before Toast UI processing; Recreate viewer on content changes
 - `client/components/toastui/ToastEditor.vue`: Added KaTeX CSS import
 
 #### Technical Details
 - Uses KaTeX auto-render for post-processing rendered HTML
 - Supports `$...$` inline and `$$...$$` block delimiters
 - throwOnError: false for graceful failure handling
+- **Backslash fix**: Pre-processes math blocks to double-escape backslashes (`\` → `\\`) before passing to Toast UI; Toast UI's `to-mark` parser converts `\\` back to `\`, preserving original LaTeX commands
 - No server changes required
 - Test note created: `latex-test.md`
