@@ -4,7 +4,9 @@
 
 <script setup>
 import Viewer from "@toast-ui/editor/dist/toastui-editor-viewer";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
+import renderMathInElement from "katex/dist/contrib/auto-render";
+import "katex/dist/katex.min.css";
 
 import baseOptions from "./baseOptions.js";
 import extendedAutolinks from "./extendedAutolinks.js";
@@ -15,6 +17,17 @@ const props = defineProps({
 
 const viewerElement = ref();
 
+function renderMath() {
+  if (!viewerElement.value) return;
+  renderMathInElement(viewerElement.value, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "$", right: "$", display: false },
+    ],
+    throwOnError: false,
+  });
+}
+
 onMounted(() => {
   new Viewer({
     ...baseOptions,
@@ -22,6 +35,13 @@ onMounted(() => {
     el: viewerElement.value,
     initialValue: props.initialValue,
   });
+  // Render KaTeX math after viewer mounts
+  renderMath();
+});
+
+watch(() => props.initialValue, () => {
+  // Re-render math when content changes
+  renderMath();
 });
 </script>
 

@@ -1,7 +1,7 @@
 # Edit History
 
 *Created: 2026-07-30 16:53:12 UTC*
-*Last Updated: 2026-07-30 16:55:00 UTC*
+*Last Updated: 2026-07-30 18:25:00 IST*
 
 ---
 
@@ -26,11 +26,20 @@
 - server/main.py: Conditional auth per note
 - Pipfile: Added python-frontmatter dependency
 
-#### Frontend Changes
-- client/classes.js: Added visibility property
-- client/constants.js: Added visibility enum
-- client/api.js: Updated create/update note APIs
-- client/views/Note.vue: Visibility toggle in editor
-- client/router.js: Removed forced login redirect
-- client/globalStore.js: Added auth state tracking
-- client/partials/NavBar.vue: Login/Logout menu items
+### 18:08 - 18:24 IST - T2: Add LaTeX Math Support
+- Added KaTeX v0.16.23 dependency
+- Modified 3 files for client-side math rendering
+- Built and deployed to quantumofgravity.com/notes/
+- Server restarted successfully
+
+#### Files Changed
+- `package.json`: Added `katex` dependency
+- `client/components/toastui/ToastViewer.vue`: Added KaTeX auto-render hook (import CSS, call renderMathInElement after mount, watcher on initialValue)
+- `client/components/toastui/ToastEditor.vue`: Added KaTeX CSS import
+
+#### Technical Details
+- Uses KaTeX auto-render for post-processing rendered HTML
+- Supports `$...$` inline and `$$...$$` block delimiters
+- throwOnError: false for graceful failure handling
+- No server changes required
+- Test note created: `latex-test.md`

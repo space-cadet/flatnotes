@@ -5,6 +5,7 @@
 <script setup>
 import Editor from "@toast-ui/editor";
 import { onMounted, ref } from "vue";
+import "katex/dist/katex.min.css";
 
 import baseOptions from "./baseOptions.js";
 

@@ -1,14 +1,16 @@
 # Task Registry
-*Last Updated: 2026-07-30 16:55:00 UTC*
+*Last Updated: 2026-07-30 18:25:00 IST*
 
 ## Active Tasks
 | ID | Title | Status | Priority | Started | Dependencies |
 |----|-------|--------|----------|---------|--------------|
-| T1 | Per-note visibility with YAML frontmatter | 🔄 IN PROGRESS | HIGH | 2026-07-30 | - |
+| - | - | - | - | - | - |
 
 ## Completed Tasks
 | ID | Title | Completed |
 |----|-------|-----------|
+| T1 | Per-note visibility with YAML frontmatter | 2026-07-29 |
+| T2 | Add LaTeX Math Support | 2026-07-30 |
 
 ## Task Template
 When creating new tasks, use this format:
