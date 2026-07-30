@@ -5,7 +5,7 @@
 <script setup>
 import Viewer from "@toast-ui/editor/dist/toastui-editor-viewer";
 import { onMounted, ref, watch } from "vue";
-import renderMathInElement from "katex/dist/contrib/auto-render";
+import katex from "katex";
 import "katex/dist/katex.min.css";
 
 import baseOptions from "./baseOptions.js";
@@ -19,60 +19,73 @@ const viewerElement = ref();
 let toastViewer = null;
 
 /**
- * Pre-process markdown to preserve LaTeX backslashes.
- * Toast UI's markdown parser strips backslashes from unknown escapes,
- * which breaks LaTeX commands like \int, \sum, etc.
- * We double-escape backslashes inside math blocks so that when
- * Toast UI converts \\ -> \, the original LaTeX commands are preserved.
+ * Unicode-safe base64 encode
+ */
+function utf8ToBase64(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) =>
+    String.fromCharCode("0x" + p1)
+  ));
+}
+
+/**
+ * Unicode-safe base64 decode
+ */
+function base64ToUtf8(str) {
+  return decodeURIComponent(
+    atob(str)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+}
+
+/**
+ * Extract math blocks from markdown and replace with HTML placeholders.
+ * Toast UI passes HTML spans through unchanged, so we can render math
+ * with KaTeX after Toast UI finishes.
+ * 
+ * This avoids Toast UI's markdown parser mangling LaTeX backslashes
+ * inside $$...$$ blocks (it bizarrely inserts spaces: \alpha -> \ alpha).
  */
 function preprocessMath(markdown) {
   if (!markdown) return markdown;
 
-  const parts = [];
-  let i = 0;
+  // Process $$...$$ block math FIRST
+  let result = markdown.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+    const encoded = utf8ToBase64(math);
+    return `<span class="math-placeholder" data-display="block" data-math="${encoded}"></span>`;
+  });
 
-  while (i < markdown.length) {
-    // Check for $$ (block math)
-    if (markdown.slice(i, i + 2) === "$$") {
-      const end = markdown.indexOf("$$", i + 2);
-      if (end !== -1) {
-        const math = markdown.slice(i + 2, end);
-        // Double backslashes inside math
-        const processed = math.replace(/\\/g, "\\\\");
-        parts.push("$$" + processed + "$$");
-        i = end + 2;
-        continue;
-      }
-    }
+  // Then process $...$ inline math
+  // Match $...$ where ... doesn't contain $ or newline
+  result = result.replace(/\$([^\$\n]+?)\$/g, (match, math) => {
+    const encoded = utf8ToBase64(math);
+    return `<span class="math-placeholder" data-display="inline" data-math="${encoded}"></span>`;
+  });
 
-    // Check for $ (inline math) — avoid matching $ inside $$
-    if (markdown[i] === "$" && markdown[i + 1] !== "$") {
-      const end = markdown.indexOf("$", i + 1);
-      if (end !== -1 && markdown[end + 1] !== "$") {
-        const math = markdown.slice(i + 1, end);
-        // Double backslashes inside math
-        const processed = math.replace(/\\/g, "\\\\");
-        parts.push("$" + processed + "$");
-        i = end + 1;
-        continue;
-      }
-    }
-
-    parts.push(markdown[i]);
-    i++;
-  }
-
-  return parts.join("");
+  return result;
 }
 
 function renderMath() {
   if (!viewerElement.value) return;
-  renderMathInElement(viewerElement.value, {
-    delimiters: [
-      { left: "$$", right: "$$", display: true },
-      { left: "$", right: "$", display: false },
-    ],
-    throwOnError: false,
+
+  const placeholders = viewerElement.value.querySelectorAll(".math-placeholder");
+  placeholders.forEach((el) => {
+    const encoded = el.getAttribute("data-math");
+    const display = el.getAttribute("data-display");
+    if (!encoded) return;
+
+    try {
+      const math = base64ToUtf8(encoded);
+      const html = katex.renderToString(math, {
+        displayMode: display === "block",
+        throwOnError: false,
+      });
+      el.outerHTML = html;
+    } catch (e) {
+      // If KaTeX fails, show raw math
+      el.textContent = display === "block" ? `$$${base64ToUtf8(encoded)}$$` : `$${base64ToUtf8(encoded)}$`;
+    }
   });
 }
 
@@ -86,6 +99,7 @@ function createViewer(content) {
     el: viewerElement.value,
     initialValue: preprocessMath(content),
   });
+  // Render math after Toast UI has rendered the markdown
   renderMath();
 }
 
