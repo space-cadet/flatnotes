@@ -109,6 +109,11 @@ class AuthType(str, Enum):
     TOTP = "totp"
 
 
+class Visibility(str, Enum):
+    PUBLIC = "public"
+    PRIVATE = "private"
+
+
 class GlobalConfigResponseModel(CustomBaseModel):
     auth_type: AuthType
     quick_access_hide: bool

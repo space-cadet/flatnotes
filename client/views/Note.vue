@@ -54,6 +54,14 @@
 
       <!-- Buttons -->
       <div class="flex shrink-0 self-end md:self-baseline print:hidden">
+        <!-- Visibility Toggle -->
+        <Toggle
+          v-if="editMode && canModify"
+          :label="visibility === visibilityOptions.public ? 'Public' : 'Private'"
+          :isOn="visibility === visibilityOptions.public"
+          class="mr-2"
+          @click="toggleVisibility"
+        />
         <!-- Delete Button -->
         <CustomButton
           v-show="canModify && !isNewNote"
@@ -141,7 +149,7 @@ import LoadingIndicator from "../components/LoadingIndicator.vue";
 import Toggle from "../components/Toggle.vue";
 import ToastEditor from "../components/toastui/ToastEditor.vue";
 import ToastViewer from "../components/toastui/ToastViewer.vue";
-import { authTypes } from "../constants.js";
+import { authTypes, visibility as visibilityOptions } from "../constants.js";
 import { useGlobalStore } from "../globalStore.js";
 import { getToastOptions } from "../helpers.js";
 import { isCurrentTokenStored } from "../tokenStorage.js";
@@ -168,9 +176,10 @@ const newTitle = ref();
 const toast = useToast();
 const toastEditor = ref();
 const unsavedChanges = ref(false);
+const visibility = ref(visibilityOptions.private);
 
 function init() {
-  // Return if we already have the note e.g. When we rename a note, the route prop would change but we’d already have the note.
+  // Return if we already have the note e.g. When we rename a note, the route prop would change but we'd already have the note.
   if (props.title && props.title == note.value.title) {
     return;
   }
@@ -180,6 +189,7 @@ function init() {
     getNote(props.title)
       .then((data) => {
         note.value = data;
+        visibility.value = data.visibility || visibilityOptions.private;
         loadingIndicator.value.setLoaded();
       })
       .catch((error) => {
@@ -193,6 +203,7 @@ function init() {
   } else {
     newTitle.value = "";
     note.value = new Note();
+    visibility.value = visibilityOptions.private;
     // Set the editMode to false to close any existing editors.
     // This ensures the editor is cleanly reinitialised in an empty state.
     // Simple fix for #266 without requiring a full re-work of the logic.
@@ -224,8 +235,17 @@ function editHandler() {
 
 function setEditMode() {
   newTitle.value = note.value.title;
+  visibility.value = note.value.visibility || visibilityOptions.private;
   unsavedChanges.value = false;
   editMode.value = true;
+}
+
+function toggleVisibility() {
+  visibility.value =
+    visibility.value === visibilityOptions.public
+      ? visibilityOptions.private
+      : visibilityOptions.public;
+  unsavedChanges.value = true;
 }
 
 function getInitialEditorValue() {
@@ -278,7 +298,7 @@ function saveHandler(close = false) {
 }
 
 function saveNew(newTitle, newContent, close = false) {
-  createNote(newTitle, newContent)
+  createNote(newTitle, newContent, visibility.value)
     .then((data) => {
       clearDraft();
       note.value = data;
@@ -298,12 +318,16 @@ function saveNew(newTitle, newContent, close = false) {
 
 function saveExisting(newTitle, newContent, close = false) {
   // Return if no changes
-  if (newTitle == note.value.title && newContent == note.value.content) {
+  if (
+    newTitle == note.value.title &&
+    newContent == note.value.content &&
+    visibility.value == note.value.visibility
+  ) {
     noteSaveSuccess(close);
     return;
   }
 
-  updateNote(note.value.title, newTitle, newContent)
+  updateNote(note.value.title, newTitle, newContent, visibility.value)
     .then((data) => {
       clearDraft();
       note.value = data;
@@ -529,7 +553,8 @@ function loadDefaultEditorMode() {
 function isContentChanged() {
   return (
     newTitle.value != note.value.title ||
-    toastEditor.value.getMarkdown() != note.value.content
+    toastEditor.value.getMarkdown() != note.value.content ||
+    visibility.value != (note.value.visibility || visibilityOptions.private)
   );
 }
 

@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 from typing import List, Literal, Set, Tuple
 
+import frontmatter
 import whoosh
 from whoosh import writing
 from whoosh.analysis import CharsetFilter, StemmingAnalyzer
@@ -23,9 +24,10 @@ from logger import logger
 
 from ..base import BaseNotes
 from ..models import Note, NoteCreate, NoteUpdate, SearchResult
+from global_config import Visibility
 
 MARKDOWN_EXT = ".md"
-INDEX_SCHEMA_VERSION = "5"
+INDEX_SCHEMA_VERSION = "6"
 
 StemmingFoldingAnalyzer = StemmingAnalyzer() | CharsetFilter(accent_map)
 
@@ -38,6 +40,7 @@ class IndexSchema(SchemaClass):
     )
     content = TEXT(analyzer=StemmingFoldingAnalyzer)
     tags = KEYWORD(lowercase=True, field_boost=2.0)
+    visibility = KEYWORD(stored=True)
 
 
 class FileSystemNotes(BaseNotes):
@@ -59,22 +62,27 @@ class FileSystemNotes(BaseNotes):
     def create(self, data: NoteCreate) -> Note:
         """Create a new note."""
         filepath = self._path_from_title(data.title)
-        self._write_file(filepath, data.content)
+        visibility = data.visibility or Visibility.PRIVATE
+        content = self._serialize_note(data.content or "", visibility)
+        self._write_file(filepath, content)
         return Note(
             title=data.title,
-            content=data.content,
+            content=data.content or "",
             last_modified=os.path.getmtime(filepath),
+            visibility=visibility,
         )
 
     def get(self, title: str) -> Note:
         """Get a specific note."""
         is_valid_filename(title)
         filepath = self._path_from_title(title)
-        content = self._read_file(filepath)
+        content, metadata = self._read_file_with_frontmatter(filepath)
+        visibility = self._get_visibility_from_metadata(metadata)
         return Note(
             title=title,
             content=content,
             last_modified=os.path.getmtime(filepath),
+            visibility=visibility,
         )
 
     def update(self, title: str, data: NoteUpdate) -> Note:
@@ -90,15 +98,31 @@ class FileSystemNotes(BaseNotes):
             os.rename(filepath, new_filepath)
             title = data.new_title
             filepath = new_filepath
+
+        # Read existing note to preserve visibility if not explicitly changed
+        existing_content, existing_metadata = self._read_file_with_frontmatter(
+            filepath
+        )
+        existing_visibility = self._get_visibility_from_metadata(
+            existing_metadata
+        )
+        visibility = data.visibility or existing_visibility
+
         if data.new_content is not None:
-            self._write_file(filepath, data.new_content, overwrite=True)
+            content = self._serialize_note(data.new_content, visibility)
+            self._write_file(filepath, content, overwrite=True)
             content = data.new_content
         else:
-            content = self._read_file(filepath)
+            # Re-serialize with potentially new visibility
+            content = self._serialize_note(existing_content, visibility)
+            self._write_file(filepath, content, overwrite=True)
+            content = existing_content
+
         return Note(
             title=title,
             content=content,
             last_modified=os.path.getmtime(filepath),
+            visibility=visibility,
         )
 
     def delete(self, title: str) -> None:
@@ -170,6 +194,33 @@ class FileSystemNotes(BaseNotes):
         """Get a note by its filename."""
         return self.get(self._strip_ext(filename))
 
+    def _read_file_with_frontmatter(self, filepath: str) -> Tuple[str, dict]:
+        """Read a note file and extract content and frontmatter metadata."""
+        content = self._read_file(filepath)
+        try:
+            post = frontmatter.loads(content)
+            return post.content, post.metadata
+        except Exception:
+            # If frontmatter parsing fails, treat entire file as content
+            return content, {}
+
+    def _get_visibility_from_metadata(self, metadata: dict) -> Visibility:
+        """Extract visibility from frontmatter metadata."""
+        vis = metadata.get("visibility", "private")
+        try:
+            return Visibility(vis.lower())
+        except ValueError:
+            return Visibility.PRIVATE
+
+    def _serialize_note(self, content: str, visibility: Visibility) -> str:
+        """Serialize a note with YAML frontmatter."""
+        if visibility == Visibility.PUBLIC:
+            post = frontmatter.Post(content, visibility="public")
+            return frontmatter.dumps(post)
+        # For private notes, don't add frontmatter to keep files clean
+        # unless they already have it
+        return content
+
     def _load_index(self) -> Index:
         """Load the note index or create new if not exists."""
         index_dir_exists = os.path.exists(self._index_path)
@@ -220,6 +271,7 @@ class FileSystemNotes(BaseNotes):
             title=note.title,
             content=content_ex_tags,
             tags=tag_string,
+            visibility=note.visibility.value,
         )
 
     def _list_all_note_filenames(self) -> List[str]:
@@ -326,6 +378,9 @@ class FileSystemNotes(BaseNotes):
 
         title = self._strip_ext(hit["filename"])
         last_modified = hit["last_modified"].timestamp()
+        visibility = Visibility(
+            hit.get("visibility", "private")
+        )
 
         # If the search was ordered using a text field then hit.score is the
         # value of that field. This isn't useful so only set self._score if it
@@ -362,6 +417,7 @@ class FileSystemNotes(BaseNotes):
             title_highlights=title_highlights,
             content_highlights=content_highlights,
             tag_matches=tag_matches,
+            visibility=visibility,
         )
 
     def _fieldnames_for_term(self, term: str) -> List[str]:

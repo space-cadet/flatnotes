@@ -5,6 +5,7 @@ class Note {
     this.title = note?.title;
     this.lastModified = note?.lastModified;
     this.content = note?.content;
+    this.visibility = note?.visibility || "private";
   }
 
   get lastModifiedAsDate() {
@@ -13,6 +14,10 @@ class Note {
 
   get lastModifiedAsString() {
     return this.lastModifiedAsDate.toLocaleString();
+  }
+
+  get isPublic() {
+    return this.visibility === "public";
   }
 }
 

@@ -1,6 +1,6 @@
 from typing import List, Literal
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -9,7 +9,7 @@ from attachments.base import BaseAttachments
 from attachments.models import AttachmentCreateResponse
 from auth.base import BaseAuth
 from auth.models import Login, Token
-from global_config import AuthType, GlobalConfig, GlobalConfigResponseModel
+from global_config import AuthType, GlobalConfig, GlobalConfigResponseModel, Visibility
 from helpers import replace_base_href
 from notes.base import BaseNotes
 from notes.models import Note, NoteCreate, NoteUpdate, SearchResult
@@ -25,6 +25,24 @@ app = FastAPI(
     openapi_url=global_config.path_prefix + "/openapi.json",
 )
 replace_base_href("client/dist/index.html", global_config.path_prefix)
+
+
+def _is_authenticated(request: Request) -> bool:
+    """Check if the request is authenticated without raising."""
+    if not auth:
+        return True
+    try:
+        # Extract token from Authorization header
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            auth.authenticate(request, token)
+            return True
+    except HTTPException:
+        return False
+    except Exception:
+        return False
+    return False
 
 
 # region UI
@@ -66,16 +84,20 @@ def auth_check() -> str:
 
 
 # region Notes
-# Get Note
+# Get Note — conditional auth based on note visibility
 @router.get(
     "/api/notes/{title}",
-    dependencies=auth_deps,
     response_model=Note,
 )
-def get_note(title: str):
-    """Get a specific note."""
+def get_note(title: str, request: Request):
+    """Get a specific note. Public notes are accessible without auth."""
     try:
-        return note_storage.get(title)
+        note = note_storage.get(title)
+        if note.visibility == Visibility.PRIVATE and not _is_authenticated(request):
+            raise HTTPException(
+                status_code=401, detail="Authentication required for private notes"
+            )
+        return note
     except ValueError:
         raise HTTPException(
             status_code=400, detail=api_messages.invalid_note_title
@@ -151,19 +173,23 @@ if global_config.auth_type != AuthType.READ_ONLY:
 # region Search
 @router.get(
     "/api/search",
-    dependencies=auth_deps,
     response_model=List[SearchResult],
 )
 def search(
+    request: Request,
     term: str,
     sort: Literal["score", "title", "lastModified"] = "score",
     order: Literal["asc", "desc"] = "desc",
     limit: int = None,
 ):
-    """Perform a full text search on all notes."""
+    """Perform a full text search on all notes.
+    Public notes are always returned; private notes require auth."""
     if sort == "lastModified":
         sort = "last_modified"
-    return note_storage.search(term, sort=sort, order=order, limit=limit)
+    results = note_storage.search(term, sort=sort, order=order, limit=limit)
+    if not _is_authenticated(request):
+        results = [r for r in results if r.visibility == Visibility.PUBLIC]
+    return results
 
 
 @router.get(

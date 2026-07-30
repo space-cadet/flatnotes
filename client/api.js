@@ -90,11 +90,12 @@ export async function getNotes(term, sort, order, limit) {
   }
 }
 
-export async function createNote(title, content) {
+export async function createNote(title, content, noteVisibility) {
   try {
     const response = await api.post("api/notes", {
       title: title,
       content: content,
+      visibility: noteVisibility,
     });
     return new Note(response.data);
   } catch (response) {
@@ -111,11 +112,12 @@ export async function getNote(title) {
   }
 }
 
-export async function updateNote(title, newTitle, newContent) {
+export async function updateNote(title, newTitle, newContent, noteVisibility) {
   try {
     const response = await api.patch(`api/notes/${encodeURIComponent(title)}`, {
       newTitle: newTitle,
       newContent: newContent,
+      visibility: noteVisibility,
     });
     return new Note(response.data);
   } catch (response) {

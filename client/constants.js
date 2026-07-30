@@ -1,4 +1,3 @@
-// Params
 export const params = {
   searchTerm: "term",
   redirect: "redirect",
@@ -17,4 +16,9 @@ export const authTypes = {
   readOnly: "read_only",
   password: "password",
   totp: "totp",
+};
+
+export const visibility = {
+  public: "public",
+  private: "private",
 };
