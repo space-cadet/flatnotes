@@ -2,6 +2,19 @@
   <div class="flex h-full justify-center">
     <div class="flex max-w-[500px] flex-1 flex-col items-center pt-[25vh]">
       <Logo class="mb-5" />
+      
+      <!-- Anonymous user welcome -->
+      <div
+        v-if="globalStore.authRequired && !globalStore.isAuthenticated"
+        class="mb-4 w-full rounded-lg border border-theme-border bg-theme-background-elevated p-4 text-center"
+      >
+        <p class="mb-2 text-sm text-theme-text-muted">
+          Welcome to the public notes. Log in to see private notes and create new ones.
+        </p>
+        <RouterLink :to="{ name: 'login', query: { redirect: '/' } }">
+          <CustomButton label="Log In" :iconPath="mdilLogin" />
+        </RouterLink>
+      </div>
       <SearchInput class="mb-5 shadow-[0_0_20px] shadow-theme-shadow" />
       <LoadingIndicator
         ref="loadingIndicator"
@@ -40,6 +53,7 @@
 
 <script setup>
 import { mdiDotsHorizontal } from "@mdi/js";
+import { mdilLogin } from "@mdi/light-js";
 import { useToast } from "primevue/usetoast";
 import { onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";

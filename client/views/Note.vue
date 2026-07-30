@@ -78,13 +78,23 @@
       </span>
 
         <!-- Visibility Toggle -->
-        <Toggle
-          v-if="editMode && canModify"
-          :label="visibility === visibilityOptions.public ? 'Public' : 'Private'"
-          :isOn="visibility === visibilityOptions.public"
-          class="mr-2"
-          @click="toggleVisibility"
-        />
+        <div v-if="editMode && canModify" class="mr-2 flex items-center">
+          <Toggle
+            :label="visibility === visibilityOptions.public ? 'Public' : 'Private'"
+            :isOn="visibility === visibilityOptions.public"
+            @click="toggleVisibility"
+          />
+          <span 
+            class="ml-1 cursor-help text-xs text-theme-text-muted"
+            :title="visibility === visibilityOptions.public 
+              ? 'Anyone can view this note without logging in' 
+              : 'Only authenticated users can view this note'"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </span>
+        </div>
         <!-- Delete Button -->
         <CustomButton
           v-show="canModify && !isNewNote"

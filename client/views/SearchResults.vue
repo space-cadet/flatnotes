@@ -22,8 +22,20 @@
       >
         <RouterLink :to="{ name: 'note', params: { title: result.title } }">
           <!-- Title and Tags -->
-          <div>
+          <div class="flex items-center">
             <span v-html="result.titleHighlightsOrTitle" class="mr-2"></span>
+            <!-- Visibility indicator -->
+            <span
+              v-if="result.visibility === 'public'"
+              class="mr-2 inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800 dark:bg-green-900 dark:text-green-200"
+              title="Public note"
+            >
+              <svg class="mr-0.5 h-2 w-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+              </svg>
+              Public
+            </span>
             <Tag v-for="tag in result.tagMatches" :tag="tag" class="mr-1" />
           </div>
           <!-- Last Modified and Content Highlights -->
