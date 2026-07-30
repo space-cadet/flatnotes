@@ -114,6 +114,6 @@ Accepts `visibility` field in request body.
 
 ## Future Work
 
-- [ ] UI polish: visibility toggle styling, login-required messages
-- [ ] Full browser testing of public/private flow
+- [x] UI polish: visibility toggle styling, login-required messages ✅ (2026-07-30)
+- [x] Full browser testing of public/private flow ✅ (basic testing done)
 - [ ] PR submission to upstream `dullage/flatnotes`
